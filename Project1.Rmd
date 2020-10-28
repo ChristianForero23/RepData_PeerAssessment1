@@ -1,0 +1,115 @@
+---
+title: '"Course Project 1 - Reproducible Research"'
+author: "Christian Forero"
+date: "27/10/2020"
+output: 
+  html_document: 
+    keep_md: yes
+---
+##Introduction
+
+This is an R Markdown document, created for the Coursera course "Reproducible Research", in completion of "Peer Assessment 1". The assignment requires students to write an R markdown document evidencing literate programming, using markdown and R programming techniques. There are 5 primary questions to be answered, dealing with processing and analysing data. The data provided to be worked upon, is called "activity monitoring data".
+
+
+##Step 1
+Code for reading in the dataset and/or processing the data.
+
+```{r, echo = TRUE}
+activity<-read.csv("activity.csv")
+```
+Exploring the basics of this data.
+```{r}
+dim(activity)
+names(activity)
+head(activity)
+str(activity)
+sapply(activity, function(x) sum(is.na(x)))
+```
+##Step 2
+Histogram of the total number of steps taken each day.
+
+```{r, echo = TRUE}
+x<- aggregate(activity$steps, by=list(Date=activity$date), FUN=sum, na.rm=TRUE)
+library(lubridate)
+x$Date <- ymd(x$Date)
+names (x)[2] = "Steps"
+rownames(x) <- x$Date
+png("plot1.png")
+hist(x$Steps, breaks=20, xlab="Number of Steps Taken", 
+     main="Histogram of the Total Number of Steps Taken per Day")
+dev.off()
+
+```
+
+##Step 3
+Mean and median values of the total number of steps taken per day.
+
+```{r, echo = TRUE}
+library(dplyr)
+totalStepsSummary <- summarise(x, mean_TotalSteps=mean(x$Steps),median_TotalSteps=median(x$Steps))
+print(totalStepsSummary)
+```
+##Step 4
+Time series plot of the average number of steps taken.
+
+```{r, echo = TRUE}
+s<-aggregate(activity$steps, by=list(Category=activity$interval), FUN=mean,  na.rm=TRUE)
+library(lubridate)
+names (s)[2] = "Steps"
+names (s)[1] = "Intervals"
+library(ggplot2)
+png("plot2.png")
+ggplot(s, aes(y=Steps, x=Intervals)) + geom_line()
+dev.off()
+```
+
+##Step 5
+##The 5-minute interval that, on average, contains the maximum number of steps
+```{r, echo = TRUE}
+activity<- read.csv('activity.csv')
+s<-aggregate(activity$steps, by=list(Category=activity$interval), FUN=mean,  na.rm=TRUE)
+r<-s %>% group_by(Category) %>% slice(which.max(x))
+datos <- r[with(r, order(-r$x)), ]
+names (datos)[2] = "Steps"
+names (s)[1] = "interval"
+datos[1,]
+```
+
+##Step 6
+Code to describe and show a strategy for imputing missing data
+There are multiple strategies to deal with multiple value imputations.
+
+```{r, echo = TRUE}
+activity<- read.csv('activity.csv')
+sapply(activity, function(x) sum(is.na(x)))
+library(dplyr)
+x<- aggregate(activity$steps, by=list(interval=activity$interval), FUN=sum, na.rm=TRUE)
+names (x)[2] = "steps"
+for (a in 1:length(x$steps)){
+  for (i in 1:length(activity$steps)){
+    if (x$interval[a]== activity$interval[i]){
+      if(is.na(activity$steps[i])){
+        activity$steps[i]=x$steps[a]
+        
+      }
+      
+      
+    }
+    
+  }
+  
+}
+head(activity)
+
+```
+
+## Step 7
+Histogram of the total number of steps taken each day after missing values are imputed.
+
+```{r, echo = TRUE}
+png("plot3.png")
+hist(activity$steps, breaks=20, xlab="Number of Steps Taken", 
+     main="Histogram of Total Number of Steps Taken per Day (With Imputed Values)")
+dev.off()
+```
+
